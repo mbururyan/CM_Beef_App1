@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "65254725041",
+    "project_id": "cm-beef-app1",
+    "storage_bucket": "cm-beef-app1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65254725041:android:83f6c40c1b6170057c1990",
+        "android_client_info": {
+          "package_name": "com.example.cm_demo_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbgNcrJhY6Rroc1u9RZRRO5mwK8go7tWM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
