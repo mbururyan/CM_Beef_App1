@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../utils/validators.dart';
+import '../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -37,25 +38,43 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+  if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _submitting = true);
-    // TODO(increment-4):
-    //   1. Check username uniqueness against Firestore users collection.
-    //   2. FirebaseAuth createUserWithEmailAndPassword.
-    //   3. Write the users/{uid} document (role: 'evaluator').
-    await Future.delayed(const Duration(milliseconds: 600)); // stub
-    if (!mounted) return;
-    setState(() => _submitting = false);
+  setState(() => _submitting = true);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('Form valid — account creation lands in increment 4'),
-        backgroundColor: AppColors.green,
-      ),
+  String? error;
+  try {
+    await AuthService.instance.signUp(
+      fullName: _nameCtrl.text,
+      username: _usernameCtrl.text,
+      email: _emailCtrl.text,
+      phone: _phoneCtrl.text,
+      password: _passwordCtrl.text,
     );
+  } on AuthException catch (e) {
+    error = e.message;
+  } catch (_) {
+    error = 'Something went wrong — try again';
   }
+
+  if (!mounted) return;
+  setState(() => _submitting = false);
+
+  if (error != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error), backgroundColor: AppColors.orange),
+    );
+    return;
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Account created — you can now log in'),
+      backgroundColor: AppColors.green,
+    ),
+  );
+  Navigator.of(context).pop(); // back to login
+}
 
   Widget _fieldLabel(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
