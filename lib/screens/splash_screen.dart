@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
+import '../screens/home_screen.dart';
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // TODO(home-module): when HomeScreen exists, signed-in users go there.
     // For now both branches land on Login.
     final Widget next =
-        user != null ? const LoginScreen() : const LoginScreen();
+    user != null ? const HomeScreen() : const LoginScreen();
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => next),
@@ -60,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Beef Field Data',
+              'Beef Farms App',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -69,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              "Farmer's Choice Limited",
+              "Choice Meats Ltd.",
               style: TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 36),

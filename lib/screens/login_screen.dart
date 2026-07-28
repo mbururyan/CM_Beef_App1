@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'signup_screen.dart';
+import '../services/auth_service.dart';
+import '../screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,23 +28,37 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    // Validate every field; stop here if anything fails.
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+  if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _submitting = true);
-    // TODO(increment-4): username -> email lookup in Firestore users
-    // collection, then FirebaseAuth signInWithEmailAndPassword.
-    await Future.delayed(const Duration(milliseconds: 600)); // stub
-    if (!mounted) return;
-    setState(() => _submitting = false);
+  setState(() => _submitting = true);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Form valid — Firebase sign-in lands in increment 4'),
-        backgroundColor: AppColors.green,
-      ),
+  String? error;
+  try {
+    await AuthService.instance.signIn(
+      username: _usernameCtrl.text,
+      password: _passwordCtrl.text,
     );
+  } on AuthException catch (e) {
+    error = e.message;
+  } catch (_) {
+    error = 'Something went wrong — try again';
   }
+
+  if (!mounted) return;
+  setState(() => _submitting = false);
+
+  if (error != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error), backgroundColor: AppColors.orange),
+    );
+    return;
+  }
+
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (_) => const HomeScreen()),
+    (route) => false,
+  );
+}
 
   Widget _fieldLabel(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
