@@ -7,7 +7,7 @@ import 'tabs/home_tab.dart';
 import '../widgets/app_drawer.dart';
 
 /// The signed-in shell: three peer tabs behind a bottom nav.
-/// Detail screens (farm detail, evaluation wizard) are pushed
+/// Detail screens (farm detail, evaluation wizard) are pushed here
 /// OVER this shell with Navigator.push — they are not tabs.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
