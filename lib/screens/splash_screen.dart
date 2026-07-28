@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
-import '../screens/home_screen.dart';
+//import '../screens/tabs/home_tab.dart';
+import '../screens/main_shell.dart';
 
 
 class SplashScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // TODO(home-module): when HomeScreen exists, signed-in users go there.
     // For now both branches land on Login.
     final Widget next =
-    user != null ? const HomeScreen() : const LoginScreen();
+    user != null ? const MainShell() : const LoginScreen();
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => next),
