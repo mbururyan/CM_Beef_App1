@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../register_farm_screen.dart';
 
 class FarmsTab extends StatelessWidget {
   const FarmsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Padding(
+      padding: const EdgeInsets.all(18),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.location_on_outlined,
-              size: 40, color: AppColors.textMuted),
-          SizedBox(height: 10),
-          Text('My farms',
-              style:
-                  TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          SizedBox(height: 4),
-          Text('Farm registry arrives in the next module',
-              style: TextStyle(
-                  fontSize: 13, color: AppColors.textMuted)),
+          const Text('My farms',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          const Text('The live list arrives in the next increment',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          const Spacer(),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (_) => const RegisterFarmScreen()),
+            ),
+            icon: const Icon(Icons.add_location_alt_outlined, size: 20),
+            label: const Text('Register new farm'),
+          ),
+          const Spacer(),
         ],
       ),
     );

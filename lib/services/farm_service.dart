@@ -24,6 +24,7 @@ class FarmService {
   Future<String> createFarm({
     required String name,
     required String county,
+    required String subCounty,
     required String locationArea,
     required String ownerManager,
     required String contactPhone,
@@ -35,6 +36,7 @@ class FarmService {
       id: '',
       name: name,
       county: county,
+      subCounty: subCounty,
       locationArea: locationArea,
       ownerManager: ownerManager,
       contactPhone: contactPhone,

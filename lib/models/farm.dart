@@ -31,6 +31,7 @@ class Farm {
     required this.id,
     required this.name,
     required this.county,
+    required this.subCounty,
     required this.locationArea,
     required this.ownerManager,
     required this.contactPhone,
@@ -43,7 +44,11 @@ class Farm {
   final String id;
   final String name;
   final String county;
+  final String subCounty;
+
+  /// Village or locality — finer than subcounty, free text.
   final String locationArea;
+
   final String ownerManager;
 
   /// Kept as a String so the leading zero survives (0722..., not 722...).
@@ -58,8 +63,9 @@ class Farm {
   /// timestamp is still resolving.
   final DateTime? createdAt;
 
-  /// Lowercased name, used for case-insensitive search.
-  String get nameLower => name.toLowerCase();
+  /// "Nandi · Aldai" — for list rows and detail headers.
+  String get locationLabel =>
+      subCounty.isEmpty ? county : '$county · $subCounty';
 
   /// Firestore document -> Farm. The ONLY place that reads these keys.
   factory Farm.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -68,6 +74,7 @@ class Farm {
       id: doc.id,
       name: d['name'] as String? ?? '',
       county: d['county'] as String? ?? '',
+      subCounty: d['sub_county'] as String? ?? '',
       locationArea: d['location_area'] as String? ?? '',
       ownerManager: d['owner_manager'] as String? ?? '',
       contactPhone: d['contact_phone'] as String? ?? '',
@@ -85,6 +92,7 @@ class Farm {
         'name': name.trim(),
         'name_lower': name.trim().toLowerCase(),
         'county': county.trim(),
+        'sub_county': subCounty.trim(),
         'location_area': locationArea.trim(),
         'owner_manager': ownerManager.trim(),
         'contact_phone': contactPhone.replaceAll(RegExp(r'\s+'), ''),
