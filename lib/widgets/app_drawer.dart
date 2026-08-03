@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../screens/login_screen.dart';
 import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -133,10 +134,54 @@ class AppDrawer extends StatelessWidget {
             ),
 
             // --- Menu (stubs until their modules land) ---
-            _item(context,
-                icon: Icons.cloud_upload_outlined,
-                label: 'Sync center',
-                comingWith: 'the sync module'),
+            // Sync center carries a live badge of what is still pending.
+            StreamBuilder<SyncStatus>(
+              stream: SyncService.instance.watch(),
+              initialData: SyncStatus.empty,
+              builder: (context, snapshot) {
+                final count = (snapshot.data ?? SyncStatus.empty).count;
+                return ListTile(
+                  dense: true,
+                  leading: Icon(
+                    count == 0
+                        ? Icons.cloud_done_outlined
+                        : Icons.cloud_upload_outlined,
+                    size: 20,
+                    color: count == 0
+                        ? AppColors.textSecondary
+                        : AppColors.amber,
+                  ),
+                  title: const Text('Sync center',
+                      style: TextStyle(
+                          fontSize: 14, color: AppColors.textPrimary)),
+                  trailing: count == 0
+                      ? null
+                      : Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppColors.amberDark,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.amber),
+                          ),
+                        ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(count == 0
+                            ? 'Everything is synced'
+                            : '$count item(s) waiting — they sync automatically'),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
             _item(context,
                 icon: Icons.description_outlined,
                 label: 'My reports',

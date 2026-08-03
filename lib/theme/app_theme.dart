@@ -19,6 +19,11 @@ class AppColors {
   static const greenDark = Color(0xFF1E4620);
 
   static const orange = Color(0xFFE05B4D);
+
+  /// Attention / pending — softer than orange, used for sync-pending
+  /// states and follow-up nudges.
+  static const amber = Color(0xFFE0A54D);
+  static const amberDark = Color(0xFF4A2A1A);
 }
 
 ThemeData buildAppTheme() {

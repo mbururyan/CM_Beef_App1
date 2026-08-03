@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/sync_strip.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
@@ -69,33 +70,8 @@ class HomeTab extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // --- Sync strip (static until the sync module) ---
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.cloud_done_outlined,
-                    size: 16, color: AppColors.greenLight),
-                SizedBox(width: 6),
-                Text(
-                  'All visits synced',
-                  style: TextStyle(
-                      fontSize: 12, color: AppColors.textSecondary),
-                ),
-                Spacer(),
-                Text(
-                  'online',
-                  style:
-                      TextStyle(fontSize: 11, color: AppColors.textMuted),
-                ),
-              ],
-            ),
-          ),
+          // --- Sync strip: live pending-write status ---
+          const SyncStrip(),
           const SizedBox(height: 14),
 
           // --- Primary action ---
