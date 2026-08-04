@@ -2,6 +2,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/farm.dart';
 import 'auth_service.dart';
+import 'session_service.dart';
+
+/// What createFarm hands back: the id is available immediately, while
+/// serverAck completes only once the server has the write. Offline,
+/// serverAck simply never completes — which is the point.
+class FarmCreateResult {
+  const FarmCreateResult({required this.id, required this.serverAck});
+
+  final String id;
+  final Future<void> serverAck;
+
+  /// Waits briefly for the server. Returns true if it landed, false if
+  /// the write is still queued locally.
+  Future<bool> syncedWithin(Duration timeout) async {
+    try {
+      await serverAck.timeout(timeout);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+}
 
 /// Everything that touches the farms collection. Screens call these
 /// methods and get Farm objects back — they never see Firestore.
@@ -14,14 +36,14 @@ class FarmService {
   CollectionReference<Map<String, dynamic>> get _farms =>
       _db.collection('farms');
 
-  /// Registers a farm and returns its new id.
+  /// Registers a farm.
   ///
   /// Offline-safe by design: the document id is generated on the
   /// device, so this returns immediately with a real id even with no
   /// signal, and Firestore syncs the write when connectivity returns.
-  /// Note we deliberately do NOT await the set() — awaiting it would
-  /// hang forever while offline, because the server never acknowledges.
-  Future<String> createFarm({
+  /// We deliberately do NOT await the set() — awaiting it would hang
+  /// forever while offline, because the server never acknowledges.
+  FarmCreateResult createFarm({
     required String name,
     required String county,
     required String subCounty,
@@ -29,8 +51,11 @@ class FarmService {
     required String ownerManager,
     required String contactPhone,
     required ProductionSystem productionSystem,
-  }) async {
+  }) {
     final uid = AuthService.instance.currentUser!.uid;
+    // Stamped from the in-memory session, never a Firestore read:
+    // a read would write a blank name when registering offline.
+    final eoName = SessionService.instance.profile.fullName;
 
     final farm = Farm(
       id: '',
@@ -42,26 +67,30 @@ class FarmService {
       contactPhone: contactPhone,
       productionSystem: productionSystem,
       createdBy: uid,
+      createdByName: eoName,
     );
 
     final ref = _farms.doc(); // id generated locally, no network needed
-    ref.set({
+    final ack = ref.set({
       ...farm.toMap(),
       'created_at': FieldValue.serverTimestamp(),
     });
 
-    return ref.id;
+    return FarmCreateResult(id: ref.id, serverAck: ack);
   }
 
-  /// Live list of the farms this evaluator registered, newest first.
+  /// Live list of EVERY registered farm, newest first.
+  ///
+  /// Deliberately not scoped to the signed-in EO: a farm can be visited
+  /// by several officers, so created_by is provenance, not ownership.
+  /// Scoping it would make it impossible for one EO to evaluate a farm
+  /// another registered, which forces duplicate registrations.
   ///
   /// A stream, not a one-off fetch: the list updates itself when a farm
   /// is added, and Firestore serves it from the local cache first, so
   /// it works offline and fills in instantly.
-  Stream<List<Farm>> myFarms() {
-    final uid = AuthService.instance.currentUser!.uid;
+  Stream<List<Farm>> allFarms() {
     return _farms
-        .where('created_by', isEqualTo: uid)
         .orderBy('created_at', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(Farm.fromDoc).toList());

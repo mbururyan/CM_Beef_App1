@@ -70,6 +70,7 @@ class FarmDetailScreen extends StatelessWidget {
                     _row('Owner', farm.ownerManager),
                     _row('Phone', farm.contactPhone),
                     _row('Registered', Formatters.date(farm.createdAt)),
+                    _row('Registered by', farm.createdByLabel),
                   ],
                 ),
               ),

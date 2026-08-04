@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import 'login_screen.dart';
 //import '../screens/tabs/home_tab.dart';
 import '../screens/main_shell.dart';
+import '../services/session_service.dart';
 
 
 class SplashScreen extends StatefulWidget {
@@ -26,10 +27,10 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    // TODO(home-module): when HomeScreen exists, signed-in users go there.
-    // For now both branches land on Login.
-    final Widget next =
-    user != null ? const MainShell() : const LoginScreen();
+if (user != null) await SessionService.instance.load();
+if (!mounted) return;
+
+final Widget next = user != null ? const MainShell() : const LoginScreen();
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => next),

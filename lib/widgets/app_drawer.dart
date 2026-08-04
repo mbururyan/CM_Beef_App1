@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/login_screen.dart';
 import '../services/auth_service.dart';
+import '../services/session_service.dart';
 import '../services/sync_service.dart';
 import '../theme/app_theme.dart';
 
@@ -39,6 +39,7 @@ class AppDrawer extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
 
     await AuthService.instance.signOut();
+    SessionService.instance.clear();
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -69,7 +70,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = AuthService.instance.currentUser!.uid;
+    //final uid = AuthService.instance.currentUser!.uid;
 
     return Drawer(
       backgroundColor: const Color(0xFF181818),
@@ -77,28 +78,12 @@ class AppDrawer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- Profile card ---
+            // --- Profile card (from the in-memory session) ---
             Padding(
               padding: const EdgeInsets.all(14),
-              child: FutureBuilder<
-                  DocumentSnapshot<Map<String, dynamic>>>(
-                future: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(uid)
-                    .get(),
-                builder: (context, snapshot) {
-                  final data = snapshot.data?.data();
-                  final name = data?['full_name'] as String? ?? '…';
-                  final username =
-                      data?['username'] as String? ?? '';
-                  final role =
-                      data?['role'] as String? ?? 'evaluator';
-                  final initials = name
-                      .split(' ')
-                      .where((p) => p.isNotEmpty)
-                      .take(2)
-                      .map((p) => p[0].toUpperCase())
-                      .join();
+              child: Builder(
+                builder: (context) {
+                  final profile = SessionService.instance.profile;
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -111,21 +96,30 @@ class AppDrawer extends StatelessWidget {
                         CircleAvatar(
                           radius: 20,
                           backgroundColor: AppColors.greenDark,
-                          child: Text(initials,
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.greenLight)),
+                          child: Text(
+                            profile.initials,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.greenLight,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        Text(name,
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600)),
-                        Text('$username · $role',
-                            style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textMuted)),
+                        Text(
+                          profile.fullName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '${profile.username} · ${profile.role}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -133,7 +127,6 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // --- Menu (stubs until their modules land) ---
             // Sync center carries a live badge of what is still pending.
             StreamBuilder<SyncStatus>(
               stream: SyncService.instance.watch(),

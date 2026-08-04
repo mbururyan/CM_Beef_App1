@@ -40,10 +40,13 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
 
     setState(() => _submitting = true);
 
+    final name = _nameCtrl.text.trim();
+
     String? error;
+    bool synced = false;
     try {
-      await FarmService.instance.createFarm(
-        name: _nameCtrl.text,
+      final result = FarmService.instance.createFarm(
+        name: name,
         county: _county!,
         subCounty: _subCounty!,
         locationArea: _areaCtrl.text,
@@ -51,6 +54,9 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
         contactPhone: _phoneCtrl.text,
         productionSystem: _system!,
       );
+      // The farm is already saved on this phone. This only asks whether
+      // the server got it too, so we can tell the EO the truth.
+      synced = await result.syncedWithin(const Duration(seconds: 2));
     } catch (_) {
       error = 'Could not save the farm — try again';
     }
@@ -67,8 +73,13 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${_nameCtrl.text.trim()} registered'),
-        backgroundColor: AppColors.green,
+        content: Text(
+          synced
+              ? '$name registered and synced'
+              : '$name saved on this phone — will sync when online',
+        ),
+        backgroundColor: synced ? AppColors.green : AppColors.amber,
+        duration: const Duration(seconds: 4),
       ),
     );
     Navigator.of(context).pop();
@@ -134,6 +145,12 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
                     // county the user just moved away from.
                     _subCounty = null;
                   }),
+                  // Overrides the form's on-blur rule. Opening and
+                  // closing a dropdown counts as losing focus, which
+                  // would scold the EO before they had a chance to
+                  // choose. This waits for the Save button, then clears
+                  // itself the moment a county is picked.
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (v) =>
                       v == null ? 'County cannot be blank' : null,
                 ),
@@ -163,6 +180,7 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
                   onChanged: _county == null
                       ? null
                       : (v) => setState(() => _subCounty = v),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (v) =>
                       v == null ? 'Sub-county cannot be blank' : null,
                 ),

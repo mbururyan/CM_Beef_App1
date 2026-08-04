@@ -44,15 +44,15 @@ class _FarmsTabState extends State<FarmsTab> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Farm>>(
-      stream: FarmService.instance.myFarms(),
+      stream: FarmService.instance.allFarms(),
       builder: (context, snapshot) {
-       if (snapshot.hasError) {
-  return _centered(
-    icon: Icons.error_outline,
-    title: 'Could not load farms',
-    subtitle: '${snapshot.error}',
-  );
-}
+        if (snapshot.hasError) {
+          return _centered(
+            icon: Icons.error_outline,
+            title: 'Could not load farms',
+            subtitle: 'Pull down after checking your connection',
+          );
+        }
         if (!snapshot.hasData) {
           return const Center(
             child: CircularProgressIndicator(strokeWidth: 2.4),
@@ -71,7 +71,7 @@ class _FarmsTabState extends State<FarmsTab> {
               Row(
                 children: [
                   Text(
-                    'My farms',
+                    'Farms',
                     style: const TextStyle(
                         fontSize: 17, fontWeight: FontWeight.w600),
                   ),
@@ -116,8 +116,8 @@ class _FarmsTabState extends State<FarmsTab> {
                 Expanded(
                   child: _centered(
                     icon: Icons.location_off_outlined,
-                    title: 'No farms yet',
-                    subtitle: 'Register your first farm to get started',
+                    title: 'No farms registered yet',
+                    subtitle: 'Register the first farm to get started',
                     action: ElevatedButton.icon(
                       onPressed: _openRegister,
                       icon: const Icon(Icons.add, size: 18),
@@ -230,7 +230,8 @@ class _FarmCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    'registered ${Formatters.relativeDate(farm.createdAt)}',
+                    'registered ${Formatters.relativeDate(farm.createdAt)} '
+                    '· by ${farm.createdByLabel}',
                     style: const TextStyle(
                         fontSize: 11, color: AppColors.textMuted),
                   ),

@@ -5,6 +5,7 @@ import 'signup_screen.dart';
 import '../services/auth_service.dart';
 //import '../screens/tabs/home_tab.dart';
 import '../screens/main_shell.dart';
+import '../services/session_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
       username: _usernameCtrl.text,
       password: _passwordCtrl.text,
     );
+    await SessionService.instance.load();
   } on AuthException catch (e) {
     error = e.message;
   } catch (_) {

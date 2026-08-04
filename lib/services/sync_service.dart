@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'auth_service.dart';
-
 /// One thing waiting to reach the server.
 class PendingItem {
   const PendingItem({required this.label, required this.detail});
@@ -49,11 +47,10 @@ class SyncService {
   /// finally acknowledged would never reach the UI.
   // TODO(evaluation-module): fold pending evaluations in here too.
   Stream<SyncStatus> watch() {
-    final uid = AuthService.instance.currentUser!.uid;
-
+    // No created_by filter needed: hasPendingWrites is only ever true
+    // for writes made on THIS device, so the filter would be redundant.
     return _db
         .collection('farms')
-        .where('created_by', isEqualTo: uid)
         .snapshots(includeMetadataChanges: true)
         .map((snap) {
       final pending = snap.docs
