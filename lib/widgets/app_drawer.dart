@@ -70,7 +70,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //final uid = AuthService.instance.currentUser!.uid;
+    final uid = AuthService.instance.currentUser!.uid;
 
     return Drawer(
       backgroundColor: const Color(0xFF181818),
@@ -142,7 +142,7 @@ class AppDrawer extends StatelessWidget {
                     size: 20,
                     color: count == 0
                         ? AppColors.textSecondary
-                        : AppColors.amber,
+                        : AppColors.orange,
                   ),
                   title: const Text('Sync center',
                       style: TextStyle(

@@ -84,6 +84,25 @@ class EvaluationService {
     });
   }
 
+  /// Vaccination saves its rows AND its score in a single update, so
+  /// the two halves of the section can never land apart.
+  void saveVaccinationSection(
+    String evalId, {
+    required List<VaccinationRecord> records,
+    required String comment,
+    required int score,
+  }) {
+    _evals.doc(evalId).update({
+      'vaccinations': records.map((r) => r.toMap()).toList(),
+      'sections.${SectionKey.vaccination.value}': {
+        'answers': <String, dynamic>{},
+        'comment': comment.trim(),
+        'score': score,
+      },
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+  }
+
   void saveSummary(
     String evalId, {
     required List<String> keyStrengths,
@@ -98,18 +117,35 @@ class EvaluationService {
     });
   }
 
-  /// Finalises the visit. Score and rating are computed here from the
-  /// section scores — never typed by the evaluator, so the arithmetic
-  /// cannot drift.
-  Future<void> submit(Evaluation evaluation) async {
+  /// Finalises the visit: summary text, computed score and status in a
+  /// SINGLE update, so a visit can never end up submitted without its
+  /// summary — or vice versa — if the write is interrupted.
+  ///
+  /// Score and rating are computed here from the section scores, never
+  /// typed by the evaluator, so the arithmetic cannot drift.
+  void submitWithSummary(
+    Evaluation evaluation, {
+    required List<String> keyStrengths,
+    required List<String> areasImprovement,
+    required String recommendations,
+  }) {
     final total = evaluation.totalScore;
     _evals.doc(evaluation.id).update({
+      'key_strengths': keyStrengths,
+      'areas_improvement': areasImprovement,
+      'recommendations': recommendations.trim(),
       'total_score': total,
       'rating': Rating.fromScore(total).value,
       'status': 'submitted',
       'updated_at': FieldValue.serverTimestamp(),
     });
   }
+
+  /// Removes an unfinished visit. Rules allow this only for the
+  /// evaluator's own drafts — a submitted visit is a supplier record
+  /// and cannot be deleted from a phone.
+  Future<void> deleteDraft(String evalId) =>
+      _evals.doc(evalId).delete();
 
   /// Live single visit — the wizard watches this so every screen sees
   /// the same saved state.

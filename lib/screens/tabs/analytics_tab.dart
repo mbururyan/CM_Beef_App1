@@ -18,7 +18,7 @@ class AnalyticsTab extends StatelessWidget {
               style:
                   TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           SizedBox(height: 4),
-          Text('Charts arrive once evaluations exist',
+          Text('Coming soon ...',
               style: TextStyle(
                   fontSize: 13, color: AppColors.textMuted)),
         ],

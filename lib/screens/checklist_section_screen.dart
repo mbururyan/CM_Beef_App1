@@ -4,6 +4,8 @@ import '../constants/evaluation_template.dart';
 import '../models/evaluation.dart';
 import '../services/evaluation_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/answer_chip.dart';
+import '../widgets/score_selector.dart';
 
 /// One screen, four sections. Feeding, feed quality, biosecurity and
 /// housing differ only in their questions and answer labels, so they
@@ -55,9 +57,6 @@ class _ChecklistSectionScreenState
 
   bool get _allAnswered => _answers.values.every((v) => v != null);
 
-  int get _positiveCount =>
-      _answers.values.where((v) => v == true).length;
-
   void _save() {
     if (!_allAnswered || _score == null) {
       setState(() => _showErrors = true);
@@ -84,21 +83,6 @@ class _ChecklistSectionScreenState
         duration: const Duration(seconds: 2),
       ),
     );
-  }
-
-  static String _scoreLabel(int score) {
-    switch (score) {
-      case 1:
-        return '1 — poor';
-      case 2:
-        return '2 — below average';
-      case 3:
-        return '3 — average';
-      case 4:
-        return '4 — good';
-      default:
-        return '5 — excellent';
-    }
   }
 
   @override
@@ -142,7 +126,7 @@ class _ChecklistSectionScreenState
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          _AnswerChip(
+                          AnswerChip(
                             label: t.positiveLabel,
                             selected: value == true,
                             positive: true,
@@ -150,7 +134,7 @@ class _ChecklistSectionScreenState
                                 () => _answers[q.id] = true),
                           ),
                           const SizedBox(width: 8),
-                          _AnswerChip(
+                          AnswerChip(
                             label: t.negativeLabel,
                             selected: value == false,
                             positive: false,
@@ -164,96 +148,15 @@ class _ChecklistSectionScreenState
                 );
               }),
 
-              const SizedBox(height: 6),
-              // Live tally — a hint for the score, never a substitute:
-              // the 1-5 remains the evaluator's judgement.
-              Text(
-                '$_positiveCount of ${t.questions.length} '
-                '${t.positiveLabel.toLowerCase()}',
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 10),
 
               // --- Score (before comments: the judgement first) ---
-              const Text('Section score',
-                  style: TextStyle(
-                      fontSize: 13, color: AppColors.textSecondary)),
-              const SizedBox(height: 10),
-              Row(
-                children: List.generate(5, (i) {
-                  final n = i + 1;
-                  final selected = _score == n;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: i == 4 ? 0 : 8),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => setState(() => _score = n),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 120),
-                          height: 54,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: selected
-                                ? const LinearGradient(
-                                    colors: [
-                                      AppColors.green,
-                                      AppColors.greenDark
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  )
-                                : null,
-                            color:
-                                selected ? null : AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: selected
-                                  ? AppColors.greenLight
-                                  : AppColors.inputBorder,
-                              width: selected ? 1.2 : 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            '$n',
-                            style: TextStyle(
-                              fontSize: selected ? 22 : 19,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: selected
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
+              ScoreSelector(
+                label: '${t.key.label} score',
+                value: _score,
+                onChanged: (n) => setState(() => _score = n),
+                showError: _showErrors,
               ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  _score == null
-                      ? 'Tap a score from 1 (poor) to 5 (excellent)'
-                      : _scoreLabel(_score!),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _score == null
-                        ? AppColors.textMuted
-                        : AppColors.greenLight,
-                  ),
-                ),
-              ),
-              if (_showErrors && _score == null)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6),
-                  child: Text('Choose a score from 1 to 5',
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.orange)),
-                ),
               if (_showErrors && !_allAnswered)
                 const Padding(
                   padding: EdgeInsets.only(top: 6),
@@ -264,7 +167,7 @@ class _ChecklistSectionScreenState
               const SizedBox(height: 20),
 
               // --- Comment ---
-              const Text('Comments (internal)',
+              const Text('Comments',
                   style: TextStyle(
                       fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
@@ -285,53 +188,6 @@ class _ChecklistSectionScreenState
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _AnswerChip extends StatelessWidget {
-  const _AnswerChip({
-    required this.label,
-    required this.selected,
-    required this.positive,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool positive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final activeBg =
-        positive ? AppColors.greenDark : AppColors.amberDark;
-    final activeFg =
-        positive ? AppColors.greenLight : AppColors.orange;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? activeBg : AppColors.inputFill,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected
-                ? (positive ? AppColors.green : AppColors.orange)
-                : AppColors.inputBorder,
-            width: 0.8,
-          ),
-        ),
-        child: Text(label,
-            style: TextStyle(
-              fontSize: 12,
-              color:
-                  selected ? activeFg : AppColors.textSecondary,
-            )),
       ),
     );
   }

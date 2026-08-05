@@ -85,6 +85,53 @@ class EvaluationTemplate {
     ],
   );
 
+  /// Performance monitoring: four yes/no practices, then the numbers.
+  static const performanceChecks = [
+    ChecklistQuestion('scale', 'Weighing scale available'),
+    ChecklistQuestion('schedule', 'Regular weighing schedule kept'),
+    ChecklistQuestion('adg_calc', 'Average daily gain is calculated'),
+    ChecklistQuestion(
+        'perf_records', 'Performance records are maintained'),
+  ];
+
+  /// id -> (label, unit). Optional: a farm that does not weigh cannot
+  /// report a weight, and a blank is more honest than a guess.
+  static const performanceKpis = <String, List<String>>{
+    'weaning_weight': ['Weaning weight', 'kg'],
+    'adg': ['Average daily gain', 'kg/day'],
+    'slaughter_weight': ['Slaughter weight', 'kg'],
+    'mortality_pct': ['Mortality rate', '%'],
+  };
+
+  /// Record keeping: tick every record type the farm actually keeps.
+  static const recordTypes = [
+    ChecklistQuestion('breeding', 'Breeding records'),
+    ChecklistQuestion('health', 'Health and treatment records'),
+    ChecklistQuestion('feed', 'Feed records'),
+    ChecklistQuestion('financial', 'Financial records'),
+    ChecklistQuestion('mortality', 'Mortality records'),
+  ];
+
+  /// The diseases FCL asks about by default. An EO can add others on
+  /// the vaccination screen; these are just the starting rows.
+  static const defaultVaccinations = [
+    'FMD',
+    'LSD',
+    'Black quarter / anthrax',
+    'Brucellosis',
+  ];
+
+  /// Stored value -> label. 'not_done' and 'unknown' are real answers,
+  /// not missing data, so an EO always has an honest option.
+  static const vaccinationFrequencies = <String, String>{
+    'annually': 'Annually',
+    'biannually': 'Twice a year',
+    'on_arrival': 'On arrival only',
+    'rarely': 'Rarely',
+    'not_done': 'Not done',
+    'unknown': 'Farmer unsure',
+  };
+
   /// Lookup used by the hub when opening a checklist section.
   static SectionTemplate? forKey(SectionKey key) {
     switch (key) {

@@ -28,7 +28,9 @@ class _SyncStripState extends State<SyncStrip> {
         final icon = synced
             ? Icons.cloud_done_outlined
             : Icons.cloud_upload_outlined;
-        final tint = synced ? AppColors.greenLight : AppColors.amber;
+        // Red, not amber: unsynced work is the one state an EO should
+        // never leave the field ignoring.
+        final tint = synced ? AppColors.greenLight : AppColors.orange;
         final text = synced
             ? 'All work synced'
             : '$pending ${pending == 1 ? "item" : "items"} pending';

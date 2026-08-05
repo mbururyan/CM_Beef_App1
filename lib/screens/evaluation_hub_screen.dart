@@ -5,7 +5,12 @@ import '../models/evaluation.dart';
 import '../services/evaluation_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
+import '../widgets/score_selector.dart';
 import 'checklist_section_screen.dart';
+import 'performance_section_screen.dart';
+import 'records_section_screen.dart';
+import 'summary_screen.dart';
+import 'vaccination_section_screen.dart';
 
 /// The spine of a visit: every section reachable in any order, because a
 /// real farm visit wanders. Nothing here holds unsaved state — each
@@ -112,6 +117,42 @@ class EvaluationHubScreen extends StatelessWidget {
                       sectionKey: key,
                       section: section,
                       onTap: () {
+                        if (key == SectionKey.vaccination) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  VaccinationSectionScreen(
+                                evaluationId: evaluationId,
+                                existingRecords: eval.vaccinations,
+                                existingSection: section,
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (key == SectionKey.performance) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PerformanceSectionScreen(
+                                evaluationId: evaluationId,
+                                existing: section,
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (key == SectionKey.records) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => RecordsSectionScreen(
+                                evaluationId: evaluationId,
+                                existing: section,
+                              ),
+                            ),
+                          );
+                          return;
+                        }
                         final template =
                             EvaluationTemplate.forKey(key);
                         if (template == null) {
@@ -143,13 +184,12 @@ class EvaluationHubScreen extends StatelessWidget {
                     // the hub shows what is outstanding rather than the
                     // EO discovering it at the end.
                     onPressed: eval.isComplete
-                        ? () {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(const SnackBar(
-                              content: Text(
-                                  'Summary screen arrives next'),
-                            ));
-                          }
+                        ? () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    SummaryScreen(evaluation: eval),
+                              ),
+                            )
                         : null,
                     child: Text(eval.isComplete
                         ? 'Review and submit'
@@ -186,6 +226,11 @@ class _SectionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final done = section != null;
+    // A completed row takes the colour of its own score, so the hub
+    // reads as a heat map — weak sections stand out without being read.
+    final scoreColor = done
+        ? ScoreSelector.scoreColors[section!.score.clamp(1, 5) - 1]
+        : AppColors.inputBorder;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -199,12 +244,7 @@ class _SectionRow extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(10),
             border: Border(
-              left: BorderSide(
-                color: done
-                    ? AppColors.green
-                    : AppColors.inputBorder,
-                width: 3,
-              ),
+              left: BorderSide(color: scoreColor, width: 3),
             ),
           ),
           child: Row(
@@ -214,8 +254,7 @@ class _SectionRow extends StatelessWidget {
                     ? Icons.check_circle
                     : Icons.radio_button_unchecked,
                 size: 18,
-                color:
-                    done ? AppColors.greenLight : AppColors.textMuted,
+                color: done ? scoreColor : AppColors.textMuted,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -225,15 +264,19 @@ class _SectionRow extends StatelessWidget {
               if (done)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                      horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.greenDark,
+                    color: scoreColor.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                        color: scoreColor.withValues(alpha: 0.55),
+                        width: 0.8),
                   ),
                   child: Text('${section!.score}/5',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.greenLight)),
+                          fontWeight: FontWeight.w600,
+                          color: scoreColor)),
                 )
               else
                 const Text('not started',
