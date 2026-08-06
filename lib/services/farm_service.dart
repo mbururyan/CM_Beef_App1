@@ -79,6 +79,34 @@ class FarmService {
     return FarmCreateResult(id: ref.id, serverAck: ack);
   }
 
+  /// Updates an existing farm.
+  ///
+  /// created_by and created_by_name are deliberately NOT written: the
+  /// rules reject any change to them, and provenance should survive an
+  /// edit. created_at is left alone for the same reason.
+  void updateFarm({
+    required String farmId,
+    required String name,
+    required String county,
+    required String subCounty,
+    required String locationArea,
+    required String ownerManager,
+    required String contactPhone,
+    required ProductionSystem productionSystem,
+  }) {
+    _farms.doc(farmId).update({
+      'name': name.trim(),
+      'name_lower': name.trim().toLowerCase(),
+      'county': county.trim(),
+      'sub_county': subCounty.trim(),
+      'location_area': locationArea.trim(),
+      'owner_manager': ownerManager.trim(),
+      'contact_phone': contactPhone.replaceAll(RegExp(r'\s+'), ''),
+      'production_system': productionSystem.value,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Live list of EVERY registered farm, newest first.
   ///
   /// Deliberately not scoped to the signed-in EO: a farm can be visited

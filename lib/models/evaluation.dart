@@ -154,6 +154,7 @@ class Evaluation {
     required this.recommendations,
     required this.status,
     this.createdAt,
+    this.pendingSync = false,
   });
 
   final String id;
@@ -189,6 +190,11 @@ class Evaluation {
   final String status;
 
   final DateTime? createdAt;
+
+  /// True while this device holds the visit but the server has not
+  /// confirmed it. Comes from Firestore's own document metadata, not
+  /// from guessing at connectivity.
+  final bool pendingSync;
 
   // --- Derived values: never stored by hand ---
 
@@ -253,6 +259,7 @@ class Evaluation {
       recommendations: d['recommendations'] as String? ?? '',
       status: d['status'] as String? ?? 'draft',
       createdAt: (d['created_at'] as Timestamp?)?.toDate(),
+      pendingSync: doc.metadata.hasPendingWrites,
     );
   }
 }

@@ -72,7 +72,7 @@ class EvaluationHubScreen extends StatelessWidget {
                         Text(
                           '${eval.county} · '
                           '${Formatters.date(eval.evaluationDate)} · '
-                          '${eval.totalHerd} head',
+                          '${eval.totalHerd} heads',
                           style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.textMuted),

@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/session_service.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
-//import '../screens/tabs/home_tab.dart';
-import '../screens/main_shell.dart';
-import '../services/session_service.dart';
-
+import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,17 +21,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _route() async {
-    await Future.delayed(const Duration(seconds: 2));
+    // Held deliberately: long enough to read as branding rather than a
+    // flash before the login form.
+    await Future.delayed(const Duration(seconds: 4));
     if (!mounted) return;
 
     final user = FirebaseAuth.instance.currentUser;
-if (user != null) await SessionService.instance.load();
-if (!mounted) return;
-
-final Widget next = user != null ? const MainShell() : const LoginScreen();
+    // A returning EO keeps their cached profile, so every write still
+    // stamps the right name even with no signal.
+    if (user != null) await SessionService.instance.load();
+    if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => next),
+      MaterialPageRoute(
+        builder: (_) =>
+            user != null ? const MainShell() : const LoginScreen(),
+      ),
     );
   }
 
@@ -44,27 +47,17 @@ final Widget next = user != null ? const MainShell() : const LoginScreen();
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 84,
-              height: 84,
-              decoration: const BoxDecoration(
-                color: AppColors.greenDark,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'FCL',
-                style: TextStyle(
-                  color: AppColors.greenLight,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.5,
-                ),
-              ),
+            Image.asset(
+              'assets/icons/bull_splash.png',
+              width: 108,
+              height: 108,
+              // The artwork is a silhouette, so a colour filter tints it
+              // without needing a second copy of the file.
+              color: AppColors.greenLight,
             ),
             const SizedBox(height: 20),
             const Text(
-              'Beef Farms App',
+              'Ranch Evaluator',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -73,7 +66,7 @@ final Widget next = user != null ? const MainShell() : const LoginScreen();
             ),
             const SizedBox(height: 6),
             const Text(
-              "Choice Meats Ltd.",
+              "Choice Meats Ltd",
               style: TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 36),

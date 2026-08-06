@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/app_drawer.dart';
 import 'tabs/analytics_tab.dart';
 import 'tabs/farms_tab.dart';
 import 'tabs/home_tab.dart';
-import '../widgets/app_drawer.dart';
+import 'tabs/visits_tab.dart';
 
-/// The signed-in shell: three peer tabs behind a bottom nav.
-/// Detail screens (farm detail, evaluation wizard) are pushed here
-/// OVER this shell with Navigator.push — they are not tabs.
+/// The signed-in shell: four peer tabs behind a bottom nav.
+/// Detail screens (farm detail, the evaluation wizard, visit detail)
+/// are pushed OVER this shell — they are not tabs.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -17,23 +18,23 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  // 0 = Farms, 1 = Home, 2 = Analytics. Home is the center default.
-  int _index = 1;
+  // 0 = Home, 1 = Farms, 2 = Visits, 3 = Analytics.
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //drawer
       drawer: const AppDrawer(),
       body: SafeArea(
-        // IndexedStack keeps all three tabs alive; switching tabs
-        // shows another child without rebuilding it, so scroll
-        // positions and typed search text survive tab hops.
+        // IndexedStack keeps every tab alive; switching shows another
+        // child without rebuilding it, so scroll positions and typed
+        // search text survive tab hops.
         child: IndexedStack(
           index: _index,
           children: const [
-            FarmsTab(),
             HomeTab(),
+            FarmsTab(),
+            VisitsTab(),
             AnalyticsTab(),
           ],
         ),
@@ -49,14 +50,20 @@ class _MainShellState extends State<MainShell> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.location_on_outlined),
             activeIcon: Icon(Icons.location_on),
             label: 'Farms',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+            // ImageIcon takes its colour from the nav bar, so the same
+            // asset renders muted when unselected and green when active.
+            icon: ImageIcon(AssetImage('assets/icons/bull_head.png')),
+            label: 'Visits',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart_outlined),

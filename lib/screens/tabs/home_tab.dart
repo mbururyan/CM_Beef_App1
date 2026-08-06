@@ -74,7 +74,8 @@ class HomeTab extends StatelessWidget {
             stream: EvaluationService.instance.myDrafts(),
             builder: (context, snap) {
               if (snap.hasError) {
-                return _emptyCard('Drafts error: ${snap.error}');
+                debugPrint('drafts stream error: ${snap.error}');
+                return _emptyCard('Could not load your drafts');
               }
               final drafts = snap.data ?? const <Evaluation>[];
               // Nothing unfinished: the section disappears entirely
@@ -138,7 +139,8 @@ class HomeTab extends StatelessWidget {
             stream: EvaluationService.instance.mySubmitted(),
             builder: (context, snap) {
               if (snap.hasError) {
-                return _emptyCard('Visits error: ${snap.error}');
+                debugPrint('visits stream error: ${snap.error}');
+                return _emptyCard('Could not load your visits');
               }
               final visits = snap.data ?? const <Evaluation>[];
 
@@ -344,9 +346,24 @@ class _VisitCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(visit.farmName,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(visit.farmName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                    // Still on this phone only — the clock clears
+                    // itself the moment the server confirms.
+                    if (visit.pendingSync) ...[
+                      const SizedBox(width: 6),
+                      const Icon(Icons.access_time,
+                          size: 14, color: AppColors.amber),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${visit.county} · '

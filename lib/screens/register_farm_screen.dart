@@ -7,7 +7,11 @@ import '../theme/app_theme.dart';
 import '../utils/validators.dart';
 
 class RegisterFarmScreen extends StatefulWidget {
-  const RegisterFarmScreen({super.key});
+  const RegisterFarmScreen({super.key, this.existing});
+
+  /// When set, the screen edits this farm instead of creating one.
+  /// Same fields, same validation — only the write differs.
+  final Farm? existing;
 
   @override
   State<RegisterFarmScreen> createState() => _RegisterFarmScreenState();
@@ -26,6 +30,22 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
   ProductionSystem? _system;
   bool _submitting = false;
 
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final f = widget.existing;
+    if (f == null) return;
+    _nameCtrl.text = f.name;
+    _areaCtrl.text = f.locationArea;
+    _ownerCtrl.text = f.ownerManager;
+    _phoneCtrl.text = f.contactPhone;
+    _county = f.county.isEmpty ? null : f.county;
+    _subCounty = f.subCounty.isEmpty ? null : f.subCounty;
+    _system = f.productionSystem;
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -41,6 +61,31 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
     setState(() => _submitting = true);
 
     final name = _nameCtrl.text.trim();
+
+    // Editing takes the simple path: one update, no sync race, because
+    // the farm already exists on this device either way.
+    if (_isEdit) {
+      FarmService.instance.updateFarm(
+        farmId: widget.existing!.id,
+        name: name,
+        county: _county!,
+        subCounty: _subCounty!,
+        locationArea: _areaCtrl.text,
+        ownerManager: _ownerCtrl.text,
+        contactPhone: _phoneCtrl.text,
+        productionSystem: _system!,
+      );
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$name updated'),
+          backgroundColor: AppColors.green,
+        ),
+      );
+      return;
+    }
 
     String? error;
     bool synced = false;
@@ -101,8 +146,9 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        title: const Text('Register farm',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+        title: Text(_isEdit ? 'Edit farm' : 'Register farm',
+            style: const TextStyle(
+                fontSize: 17, fontWeight: FontWeight.w600)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -279,7 +325,7 @@ class _RegisterFarmScreenState extends State<RegisterFarmScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Save farm'),
+                      : Text(_isEdit ? 'Save changes' : 'Save farm'),
                 ),
                 const SizedBox(height: 10),
                 const Text(

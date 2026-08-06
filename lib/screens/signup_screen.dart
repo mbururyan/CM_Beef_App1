@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/validators.dart';
-import '../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -38,50 +38,50 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _submit() async {
-  if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-  setState(() => _submitting = true);
+    setState(() => _submitting = true);
 
-  String? error;
-  try {
-    await AuthService.instance.signUp(
-      fullName: _nameCtrl.text,
-      username: _usernameCtrl.text,
-      email: _emailCtrl.text,
-      phone: _phoneCtrl.text,
-      password: _passwordCtrl.text,
-    );
-  } on AuthException catch (e) {
-    error = e.message;
-  } catch (_) {
-    error = 'Something went wrong — try again';
-  }
+    String? error;
+    try {
+      await AuthService.instance.signUp(
+        fullName: _nameCtrl.text,
+        username: _usernameCtrl.text,
+        email: _emailCtrl.text,
+        phone: _phoneCtrl.text,
+        password: _passwordCtrl.text,
+      );
+    } on AuthException catch (e) {
+      error = e.message;
+    } catch (_) {
+      error = 'Something went wrong — try again';
+    }
 
-  if (!mounted) return;
-  setState(() => _submitting = false);
+    if (!mounted) return;
+    setState(() => _submitting = false);
 
-  if (error != null) {
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.orange),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error), backgroundColor: AppColors.orange),
+      const SnackBar(
+        content: Text('Account created — you can now log in'),
+        backgroundColor: AppColors.green,
+      ),
     );
-    return;
+    Navigator.of(context).pop(); // back to login
   }
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Account created — you can now log in'),
-      backgroundColor: AppColors.green,
-    ),
-  );
-  Navigator.of(context).pop(); // back to login
-}
 
   Widget _fieldLabel(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(
           text,
-          style:
-              const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          style: const TextStyle(
+              fontSize: 13, color: AppColors.textSecondary),
         ),
       );
 
@@ -98,7 +98,8 @@ class _SignupScreenState extends State<SignupScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 380),
               child: Form(
@@ -107,16 +108,39 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Create account',
-                      style: TextStyle(
-                          fontSize: 19, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'For FCL extension officers',
-                      style: TextStyle(
-                          fontSize: 13, color: AppColors.textMuted),
+                    // --- Header: mark beside the title, smaller than
+                    //     login's, which is smaller than the splash ---
+                    Row(
+                      children: [
+                        Image.asset(
+                          'assets/icons/bull_splash.png',
+                          width: 48,
+                          height: 48,
+                          color: AppColors.greenLight,
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Create account',
+                                style: TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'For CM extension officers',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
 
@@ -127,7 +151,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
                           hintText: 'e.g. Kepha Ojiambo'),
-                      validator: (v) => Validators.required(v, 'Full name'),
+                      validator: (v) =>
+                          Validators.required(v, 'Full name'),
                     ),
                     const SizedBox(height: 16),
 
@@ -160,7 +185,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       textInputAction: TextInputAction.next,
                       keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
-                          hintText: '07xxxxxxxx or 01xxxxxxxx or +254...'),
+                          hintText: '07xx or 01xx, or +254...'),
                       validator: Validators.kenyanPhone,
                     ),
                     const SizedBox(height: 16),
@@ -170,8 +195,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       controller: _passwordCtrl,
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.next,
-                      onChanged: (v) => setState(
-                          () => _strength = Validators.passwordStrength(v)),
+                      onChanged: (v) => setState(() =>
+                          _strength = Validators.passwordStrength(v)),
                       decoration: InputDecoration(
                         hintText: 'At least 8 characters with a number',
                         suffixIcon: IconButton(
@@ -190,7 +215,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         return Expanded(
                           child: Container(
                             height: 3,
-                            margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
+                            margin:
+                                EdgeInsets.only(right: i < 2 ? 4 : 0),
                             decoration: BoxDecoration(
                               color: _barColor(i),
                               borderRadius: BorderRadius.circular(2),
@@ -207,10 +233,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       obscureText: _obscureConfirm,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
-                      // Spec: match-check runs live while typing, so this
-                      // field validates per keystroke while the rest of the
-                      // form stays on-blur.
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      // The match check runs live while typing, so this
+                      // one field overrides the form's on-blur rule.
+                      autovalidateMode:
+                          AutovalidateMode.onUserInteraction,
                       decoration: InputDecoration(
                         hintText: 'Repeat your password',
                         suffixIcon: IconButton(
@@ -247,7 +273,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 fontSize: 13,
                                 color: AppColors.textMuted)),
                         TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: () =>
+                              Navigator.of(context).pop(),
                           child: const Text('Log in',
                               style: TextStyle(fontSize: 13)),
                         ),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-import 'signup_screen.dart';
 import '../services/auth_service.dart';
-//import '../screens/tabs/home_tab.dart';
-import '../screens/main_shell.dart';
 import '../services/session_service.dart';
+import '../theme/app_theme.dart';
+import 'main_shell.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,45 +29,49 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-  if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-  setState(() => _submitting = true);
+    setState(() => _submitting = true);
 
-  String? error;
-  try {
-    await AuthService.instance.signIn(
-      username: _usernameCtrl.text,
-      password: _passwordCtrl.text,
+    String? error;
+    try {
+      await AuthService.instance.signIn(
+        username: _usernameCtrl.text,
+        password: _passwordCtrl.text,
+      );
+      // Cache the profile now, while there is certainly a connection —
+      // every later write stamps the EO's name from this.
+      await SessionService.instance.load();
+    } on AuthException catch (e) {
+      error = e.message;
+    } catch (_) {
+      error = 'Something went wrong — try again';
+    }
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.orange),
+      );
+      return;
+    }
+
+    // Burn the bridge: back from Home should leave the app, not return
+    // to a login form.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainShell()),
+      (route) => false,
     );
-    await SessionService.instance.load();
-  } on AuthException catch (e) {
-    error = e.message;
-  } catch (_) {
-    error = 'Something went wrong — try again';
   }
-
-  if (!mounted) return;
-  setState(() => _submitting = false);
-
-  if (error != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error), backgroundColor: AppColors.orange),
-    );
-    return;
-  }
-
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(builder: (_) => const MainShell()),
-    (route) => false,
-  );
-}
 
   Widget _fieldLabel(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(
           text,
-          style:
-              const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          style: const TextStyle(
+              fontSize: 13, color: AppColors.textSecondary),
         ),
       );
 
@@ -78,45 +81,36 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
-              // Keeps the form phone-width even on Chrome.
+              // Keeps the form phone-width even on a wide screen.
               constraints: const BoxConstraints(maxWidth: 380),
               child: Form(
                 key: _formKey,
-                // Fields validate when focus leaves them (spec: on blur,
-                // not per keystroke).
+                // Fields validate when focus leaves them, not on every
+                // keystroke.
                 autovalidateMode: AutovalidateMode.onUnfocus,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // --- Header ---
-                    Container(
-                      width: 56,
-                      height: 56,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: AppColors.greenDark,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        'CM Beef App',
-                        style: TextStyle(
-                          color: AppColors.greenLight,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    // --- Header: the same mark as the splash ---
+                    Image.asset(
+                      'assets/icons/bull_splash.png',
+                      width: 72,
+                      height: 72,
+                      color: AppColors.greenLight,
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Welcome back',
+                      'Welcome Back',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 19, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      "Beef Field App — Choice Meats Ltd.",
+                      "For CM extension officers",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 13, color: AppColors.textMuted),
@@ -130,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       decoration:
-                          const InputDecoration(hintText: 'e.g. jkamau'),
+                          const InputDecoration(hintText: 'e.g. kepha.o'),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Username cannot be blank'
                           : null,
@@ -164,11 +158,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          // TODO(increment-4): Firebase password reset email.
+                          // TODO(auth): Firebase password reset email.
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text(
-                                    'Password reset arrives with Firebase wiring')),
+                                    'Ask your admin to reset your password for now')),
                           );
                         },
                         child: const Text('Forgot password?',
@@ -200,11 +194,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontSize: 13,
                                 color: AppColors.textMuted)),
                         TextButton(
-                          onPressed: () {
-                            // TODO(increment-3): navigate to SignupScreen.
-                            Navigator.of(context).push(
-                                 MaterialPageRoute(builder: (_) => const SignupScreen()));
-                          },
+                          onPressed: () =>
+                              Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const SignupScreen()),
+                          ),
                           child: const Text('Sign up',
                               style: TextStyle(fontSize: 13)),
                         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../screens/login_screen.dart';
+import '../screens/reports_screen.dart';
 import '../services/auth_service.dart';
 import '../services/session_service.dart';
 import '../services/sync_service.dart';
@@ -175,10 +176,23 @@ class AppDrawer extends StatelessWidget {
                 );
               },
             ),
-            _item(context,
-                icon: Icons.description_outlined,
-                label: 'My reports',
-                comingWith: 'the PDF module'),
+            // My reports is real now; only the PDF export inside it
+            // is still pending.
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.description_outlined,
+                  size: 20, color: AppColors.textSecondary),
+              title: const Text('My reports',
+                  style: TextStyle(
+                      fontSize: 14, color: AppColors.textPrimary)),
+              onTap: () {
+                Navigator.of(context).pop(); // close the drawer first
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const ReportsScreen()),
+                );
+              },
+            ),
             _item(context,
                 icon: Icons.settings_outlined,
                 label: 'Settings',

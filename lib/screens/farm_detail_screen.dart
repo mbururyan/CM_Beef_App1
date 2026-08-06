@@ -2,20 +2,191 @@ import 'package:flutter/material.dart';
 
 import '../models/evaluation.dart';
 import '../models/farm.dart';
+import '../services/auth_service.dart';
 import '../services/evaluation_service.dart';
+import '../services/farm_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 import '../widgets/score_selector.dart';
 import 'evaluation_hub_screen.dart';
+import 'register_farm_screen.dart';
 import 'visit_detail_screen.dart';
+import 'visit_setup_screen.dart';
 
 class FarmDetailScreen extends StatelessWidget {
   const FarmDetailScreen({super.key, required this.farm});
 
-  /// Passed in from the list. Read-only for now — when farm editing
-  /// exists, switch to FarmService.watchFarm(farm.id) so the screen
-  /// updates itself.
+  /// The farm as it was in the list. The screen then watches the live
+  /// document, so an edit shows up here the moment it is saved.
   final Farm farm;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Farm?>(
+      stream: FarmService.instance.watchFarm(farm.id),
+      initialData: farm,
+      builder: (context, snap) {
+        final current = snap.data ?? farm;
+        final uid = AuthService.instance.currentUser?.uid;
+        final canEdit = current.createdBy == uid;
+
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppColors.background,
+            title: Text(current.name,
+                style: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.w600)),
+            actions: [
+              IconButton(
+                tooltip: 'Edit farm',
+                // Shown to everyone, but dimmed when it will not work —
+                // hiding it entirely would leave EOs wondering whether
+                // editing exists at all.
+                icon: Icon(Icons.edit_outlined,
+                    color: canEdit
+                        ? AppColors.greenLight
+                        : AppColors.textMuted),
+                onPressed: () => canEdit
+                    ? Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => RegisterFarmScreen(
+                              existing: current),
+                        ),
+                      )
+                    : _showLockedDialog(context, current),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // --- Farm info ---
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _row('County', current.county),
+                        _row('Sub-county', current.subCounty),
+                        _row('Village', current.locationArea),
+                        _row('System',
+                            current.productionSystem.label),
+                        _row('Owner', current.ownerManager),
+                        _row('Phone', current.contactPhone),
+                        _row('Registered',
+                            Formatters.date(current.createdAt)),
+                        _row('Registered by',
+                            current.createdByLabel),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            VisitSetupScreen(initialFarm: current),
+                      ),
+                    ),
+                    icon: const Icon(Icons.post_add, size: 20),
+                    label: const Text('Evaluate this farm'),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // --- Visit history: every visit, by any EO ---
+                  StreamBuilder<List<Evaluation>>(
+                    stream: EvaluationService.instance
+                        .byFarm(current.id),
+                    builder: (context, vsnap) {
+                      if (vsnap.hasError) {
+                        return _historyCard(
+                            'Could not load visits');
+                      }
+                      final visits =
+                          vsnap.data ?? const <Evaluation>[];
+                      final submitted = visits
+                          .where((v) => !v.isDraft)
+                          .toList();
+
+                      return Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Text('Visits · ${visits.length}',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          AppColors.textMuted)),
+                              const Spacer(),
+                              // Two or more scores make a direction;
+                              // one score is just a number.
+                              if (submitted.length >= 2)
+                                Text(
+                                  _trendLabel(submitted),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _trendUp(submitted)
+                                        ? AppColors.greenLight
+                                        : AppColors.amber,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if (visits.isEmpty)
+                            _historyCard('No visits recorded yet')
+                          else
+                            ...visits.map(
+                                (v) => _visitRow(context, v)),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showLockedDialog(
+      BuildContext context, Farm current) {
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cannot edit this farm',
+            style: TextStyle(fontSize: 17)),
+        content: Text(
+          'Only ${current.createdByLabel}, who registered '
+          '${current.name}, can change its details. Ask them to '
+          'update it — you can still evaluate this farm.',
+          style: const TextStyle(
+              fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _row(String label, String value) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
@@ -24,18 +195,14 @@ class FarmDetailScreen extends StatelessWidget {
           children: [
             SizedBox(
               width: 96,
-              child: Text(
-                label,
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.textMuted),
-              ),
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textMuted)),
             ),
             Expanded(
-              child: Text(
-                value.isEmpty ? '—' : value,
-                style: const TextStyle(
-                    fontSize: 13, color: AppColors.textPrimary),
-              ),
+              child: Text(value.isEmpty ? '—' : value,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.textPrimary)),
             ),
           ],
         ),
@@ -87,8 +254,8 @@ class FarmDetailScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(10),
-            border: Border(
-                left: BorderSide(color: color, width: 3)),
+            border:
+                Border(left: BorderSide(color: color, width: 3)),
           ),
           child: Row(
             children: [
@@ -145,114 +312,5 @@ class FarmDetailScreen extends StatelessWidget {
       case Rating.excellent:
         return 4;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        title: Text(
-          farm.name,
-          style:
-              const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // --- Farm info ---
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _row('County', farm.county),
-                    _row('Sub-county', farm.subCounty),
-                    _row('Village', farm.locationArea),
-                    _row('System', farm.productionSystem.label),
-                    _row('Owner', farm.ownerManager),
-                    _row('Phone', farm.contactPhone),
-                    _row('Registered', Formatters.date(farm.createdAt)),
-                    _row('Registered by', farm.createdByLabel),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              ElevatedButton.icon(
-                onPressed: () {
-                  // TODO(evaluation-module): open visit setup with this
-                  // farm pre-selected.
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Visit setup arrives with the evaluation module'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.post_add, size: 20),
-                label: const Text('Evaluate this farm'),
-              ),
-              const SizedBox(height: 24),
-
-              // --- Visit history: every visit to this farm, by any EO ---
-              StreamBuilder<List<Evaluation>>(
-                stream: EvaluationService.instance.byFarm(farm.id),
-                builder: (context, snap) {
-                  if (snap.hasError) {
-                    return _historyCard(
-                        'Visits error: ${snap.error}');
-                  }
-                  final visits = snap.data ?? const <Evaluation>[];
-                  final submitted = visits
-                      .where((v) => !v.isDraft)
-                      .toList();
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Text('Visits · ${visits.length}',
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textMuted)),
-                          const Spacer(),
-                          // Two or more scores make a direction; one
-                          // score is just a number.
-                          if (submitted.length >= 2)
-                            Text(
-                              _trendLabel(submitted),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: _trendUp(submitted)
-                                    ? AppColors.greenLight
-                                    : AppColors.amber,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (visits.isEmpty)
-                        _historyCard('No visits recorded yet')
-                      else
-                        ...visits.map((v) => _visitRow(context, v)),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

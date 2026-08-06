@@ -174,24 +174,35 @@ class _PerformanceSectionScreenState
                             style: const TextStyle(fontSize: 13)),
                       ),
                       SizedBox(
-                        width: 110,
+                        width: 84,
                         child: TextField(
                           controller: _kpis[e.key],
                           keyboardType:
                               const TextInputType.numberWithOptions(
                                   decimal: true),
                           textAlign: TextAlign.right,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
+                            // Plain hint, no suffix: Flutter hides a
+                            // decoration suffix until the field is
+                            // focused, which is why the units kept
+                            // vanishing and the dashes sat unevenly.
                             hintText: '—',
-                            suffixText: unit,
-                            suffixStyle: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textMuted),
                             isDense: true,
-                            contentPadding:
-                                const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 10),
                           ),
+                        ),
+                      ),
+                      // The unit lives outside the field, so it is
+                      // always visible and every row lines up.
+                      SizedBox(
+                        width: 52,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(unit,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted)),
                         ),
                       ),
                     ],

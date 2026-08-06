@@ -173,6 +173,58 @@ class _VisitSetupScreenState extends State<VisitSetupScreen> {
       }
     }
 
+    // Same-day check: a draft guard catches unfinished visits, but not
+    // a completed one from earlier today. Two visits on one day is
+    // usually a mistake — and occasionally deliberate, so this warns
+    // rather than blocks.
+    Evaluation? sameDay;
+    try {
+      sameDay = await EvaluationService.instance
+          .submittedVisitOn(_farm!.id, _date);
+    } catch (_) {
+      // Offline with nothing cached — let the visit proceed.
+    }
+
+    if (!mounted) return;
+
+    if (sameDay != null) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          title: const Text('Already evaluated today',
+              style: TextStyle(fontSize: 17)),
+          content: Text(
+            '${_farm!.name} was evaluated earlier today by '
+            '${sameDay!.eoName.isEmpty ? 'another officer' : sameDay!.eoName}, '
+            'scoring ${sameDay!.totalScore}/35. '
+            'Start another visit only if this is a genuinely separate '
+            'assessment.',
+            style: const TextStyle(
+                fontSize: 13, color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Go back'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Start anyway'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      if (proceed != true) {
+        setState(() => _starting = false);
+        return;
+      }
+    }
+
     final id = EvaluationService.instance.createDraft(
       farm: _farm!,
       evaluationDate: _date,

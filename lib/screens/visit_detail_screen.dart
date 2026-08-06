@@ -128,6 +128,58 @@ class VisitDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+
+              // --- Export: the farmer's copy of this visit ---
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _comingSoon(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppColors.green, width: 0.8),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.greenDark,
+                        ),
+                        child: const Icon(Icons.description_outlined,
+                            size: 19, color: AppColors.greenLight),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text('Export as PDF',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600)),
+                            SizedBox(height: 2),
+                            Text('A copy to share with the farmer',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right,
+                          size: 18, color: AppColors.textMuted),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 18),
 
               // --- Sections, tap to open the detail of each ---
@@ -178,6 +230,32 @@ class VisitDetailScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// One place to change when the PDF module lands.
+  static Future<void> _comingSoon(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text('Coming soon',
+            style: TextStyle(fontSize: 17)),
+        content: const Text(
+          'PDF reports are coming soon... Once ready, you will be able '
+          'to generate this visit as a pdf report.',
+          style: TextStyle(
+              fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
       ),
     );
   }

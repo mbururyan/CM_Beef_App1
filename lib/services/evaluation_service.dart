@@ -175,7 +175,9 @@ class EvaluationService {
         .where('status', isEqualTo: 'submitted')
         .orderBy('evaluation_date', descending: true)
         .limit(limit)
-        .snapshots()
+        // Metadata changes matter here: without them the pending-sync
+        // clock would never disappear once the server confirmed.
+        .snapshots(includeMetadataChanges: true)
         .map((s) => s.docs.map(Evaluation.fromDoc).toList());
   }
 
@@ -185,8 +187,36 @@ class EvaluationService {
   Stream<List<Evaluation>> byFarm(String farmId) => _evals
       .where('farm_id', isEqualTo: farmId)
       .orderBy('evaluation_date', descending: true)
-      .snapshots()
+      .snapshots(includeMetadataChanges: true)
       .map((s) => s.docs.map(Evaluation.fromDoc).toList());
+
+  /// A submitted visit to this farm on the same calendar day, by
+  /// anyone. Used to warn before recording a second one.
+  ///
+  /// Reuses the farm_id + evaluation_date index rather than adding a
+  /// third field, then narrows to the day in Dart — cheaper than a new
+  /// composite index for a check this small.
+  Future<Evaluation?> submittedVisitOn(
+      String farmId, DateTime date) async {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+
+    final snap = await _evals
+        .where('farm_id', isEqualTo: farmId)
+        .orderBy('evaluation_date', descending: true)
+        .limit(20)
+        .get();
+
+    for (final doc in snap.docs) {
+      final e = Evaluation.fromDoc(doc);
+      if (e.isDraft) continue;
+      if (e.evaluationDate.isAfter(start) &&
+          e.evaluationDate.isBefore(end)) {
+        return e;
+      }
+    }
+    return null;
+  }
 
   /// Any open draft for this farm by this evaluator — powers the draft
   /// guard on visit setup, so an EO resumes instead of duplicating.
